@@ -1,26 +1,22 @@
 /* 
  * backbone.oauth.js v0.1
  * Copyright (C) 2012 Philipp Nolte
+ * Modified by Gabriel Boucher
  * backbone.oauth.js may be freely distributed under the MIT license.
  */
 
-(function(window) {
+(function() {
   "use strict";
-
-  // Alias backbone, underscore and jQuery.
-  var Backbone = window.Backbone,
-      _        = window._,
-      $        = window.$;
-
-  // Parse hash helper method used for parsing location.hash.
-  var parseHash = function(hash) {
-    var params = {},
-        queryString = hash.substring(1),
-    regex = /([^&=]+)=([^&]*)/g, m;
-    while (m = regex.exec(queryString)) {
-      params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
-    }
-    return params;
+  
+  var _, Backbone;
+  if ( typeof window === 'undefined' ) {
+      _ = require( 'underscore' );
+      Backbone = require( 'backbone' );
+      exports = module.exports = Backbone;
+  }
+  else {
+      _ = window._;
+      Backbone = window.Backbone;
   }
 
   //============================================================================
@@ -35,8 +31,7 @@
     _.extend(this, options);
 
     // Make the onRedirect function publicy available.
-    _.bind(this.onRedirect, this);
-    window.OAuthRedirect = this.onRedirect;
+    window.OAuthRedirect = _.bind(this.onRedirect, this);
   };
 
   // Inject methods and properties.
@@ -48,10 +43,10 @@
     // Configures the auth dialog url.
     setupAuthUrl: function() {
       var url = this.auth_url + '?client_id=' + this.client_id
-        + '&redirect_uri=' + this.redirect_url
         + '&response_type=token';
       if (this.scope) url += '&scope=' + this.scope;
       if (this.state) url += '&state=' + this.state;
+      url += '&redirect_uri=' + this.redirect_url
       return url;
     },
 
@@ -68,12 +63,20 @@
     // that the dialog auth process has finished. It has to be checked, if
     // the auth was successful or not.
     onRedirect: function(hash) {
-      var params = parseHash(location.hash);
+
+      var params = {},
+      queryString = hash.substring(1),
+      regex = /([^&=]+)=([^&]*)/g, m;
+      while (m = regex.exec(queryString)) {
+        params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+      }
+
       if (this.authSuccess(params)) {
         this.onSuccess(params);
       } else {
         this.onError(params);
       }
+      
     },
 
     // Detect if we have a successful auth.
@@ -101,4 +104,4 @@
 
   //============================================================================
 
-})(this);
+})();
